@@ -5,6 +5,7 @@ import (
 	"devbookapi/src/models"
 	"devbookapi/src/repositories"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 
 func InsertUser(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,13 +23,18 @@ func InsertUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	db, err := database.Connect()
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	userRepository := repositories.NewUserRepository(db)
-	userRepository.Insert(user)
+
+	userId, err := userRepository.Insert(user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.Write([]byte(fmt.Sprintf("Id inserido: %d", userId)))
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
