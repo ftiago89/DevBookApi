@@ -4,37 +4,43 @@ import (
 	"devbookapi/src/database"
 	"devbookapi/src/models"
 	"devbookapi/src/repositories"
+	"devbookapi/src/responses"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
 func InsertUser(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Fatal(err)
+		responses.Error(w, http.StatusBadRequest, err)
+		return
 	}
 
 	var user models.User
 	if err = json.Unmarshal(requestBody, &user); err != nil {
-		log.Fatal(err)
+		responses.Error(w, http.StatusBadRequest, err)
+		return
 	}
 
 	db, err := database.Connect()
 	if err != nil {
-		log.Fatal(err)
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
 	}
+	defer db.Close()
 
 	userRepository := repositories.NewUserRepository(db)
 
 	userId, err := userRepository.Insert(user)
 	if err != nil {
-		log.Fatal(err)
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("Id inserido: %d", userId)))
+	user.ID = userId
+
+	responses.JSON(w, http.StatusCreated, user)
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
